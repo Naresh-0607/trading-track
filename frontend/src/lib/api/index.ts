@@ -1,0 +1,5 @@
+import { api } from './client'; import type {Account,Stats,Trade,User} from '$lib/types';
+export const authApi={register:(body:object)=>api<{access_token:string;user:User}>('/auth/register',{method:'POST',body:JSON.stringify(body)}),login:(body:object)=>api<{access_token:string;user:User}>('/auth/login',{method:'POST',body:JSON.stringify(body)}),me:()=>api<User>('/auth/me')};
+export const accountsApi={list:()=>api<Account[]>('/accounts'),create:(body:object)=>api<Account>('/accounts',{method:'POST',body:JSON.stringify(body)}),update:(id:string,body:object)=>api<Account>(`/accounts/${id}`,{method:'PATCH',body:JSON.stringify(body)}),remove:(id:string)=>api<void>(`/accounts/${id}`,{method:'DELETE'})};
+export const tradesApi={list:(query='')=>api<{items:Trade[];total:number;page:number;pages:number}>(`/trades${query}`),create:(body:object)=>api<Trade>('/trades',{method:'POST',body:JSON.stringify(body)}),update:(id:string,body:object)=>api<Trade>(`/trades/${id}`,{method:'PATCH',body:JSON.stringify(body)}),remove:(id:string)=>api<void>(`/trades/${id}`,{method:'DELETE'})};
+export const statsApi={overview:(range:string)=>api<Stats>(`/stats/overview?range=${range}`)};
