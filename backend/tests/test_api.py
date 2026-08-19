@@ -28,9 +28,10 @@ async def test_trade_ownership_listing_and_stats(client, auth):
     bad = await client.post("/api/v1/trades", headers=other, json={"account_id":account["id"],"trade_date":datetime.now(UTC).isoformat(),"symbol":"EURUSD","side":"BUY","volume":"1","open_price":"1.1"})
     assert bad.status_code == 404
     trade_ids = []
-    for symbol, side, pnl in [("EURUSD","BUY","200"),("GBPUSD","SELL","-50")]:
-        response = await client.post("/api/v1/trades", headers=auth, json={"account_id":account["id"],"trade_date":datetime.now(UTC).isoformat(),"symbol":symbol,"asset_type":"FOREX","side":side,"volume":"1","open_price":"1.1","close_price":"1.2","pnl":pnl})
+    for symbol, side, volume, close_price, expected_pnl in [("EURUSD","BUY","10","120","200.00"),("GBPUSD","SELL","5","110","-50.00")]:
+        response = await client.post("/api/v1/trades", headers=auth, json={"account_id":account["id"],"trade_date":datetime.now(UTC).isoformat(),"symbol":symbol,"asset_type":"FOREX","side":side,"volume":volume,"open_price":"100","close_price":close_price,"pnl":"99999"})
         assert response.status_code == 201
+        assert response.json()["pnl"] == expected_pnl
         trade_ids.append(response.json()["id"])
     listing = await client.get("/api/v1/trades?side=BUY", headers=auth)
     assert listing.json()["total"] == 1 and listing.json()["items"][0]["symbol"] == "EURUSD"
