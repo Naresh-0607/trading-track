@@ -19,6 +19,7 @@ class TradeCreate(BaseModel):
     close_price: Decimal | None = Field(default=None, gt=0)
     stop_loss: Decimal | None = Field(default=None, gt=0)
     take_profit: Decimal | None = Field(default=None, gt=0)
+    pnl: Decimal | None = None
     comments: str | None = Field(default=None, max_length=5000)
 
     @field_validator("symbol")
@@ -41,6 +42,7 @@ class TradeUpdate(BaseModel):
     close_price: Decimal | None = Field(default=None, gt=0)
     stop_loss: Decimal | None = Field(default=None, gt=0)
     take_profit: Decimal | None = Field(default=None, gt=0)
+    pnl: Decimal | None = None
     comments: str | None = Field(default=None, max_length=5000)
 
     @field_validator("symbol")

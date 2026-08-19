@@ -1,5 +1,4 @@
 import math
-from decimal import Decimal, ROUND_HALF_UP
 from uuid import UUID
 
 from app.domain.enums.trade_side import AssetType, TradeSide
@@ -18,13 +17,6 @@ class TradeService:
         if not account: raise AppError(404, "Account not found")
         return account
 
-    @staticmethod
-    def _pnl(side: TradeSide, volume: Decimal, open_price: Decimal, close_price: Decimal | None) -> Decimal | None:
-        if close_price is None:
-            return None
-        difference = close_price - open_price if side == TradeSide.BUY else open_price - close_price
-        return (difference * volume).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-
     async def list(self, user_id: UUID, **filters) -> TradePage:
         items, total = await self.trades.list(user_id, **filters)
         size = filters["page_size"]
@@ -38,7 +30,6 @@ class TradeService:
     async def create(self, user_id: UUID, data: TradeCreate, source: TradeSource = TradeSource.MANUAL, external: dict | None = None) -> TradeRead:
         await self._account(user_id, data.account_id)
         values = data.model_dump(); values["source"] = source; values.update(external or {})
-        values["pnl"] = self._pnl(values["side"], values["volume"], values["open_price"], values.get("close_price"))
         return TradeRead.model_validate(await self.trades.create(user_id, values))
 
     async def update(self, user_id: UUID, trade_id: UUID, data: TradeUpdate) -> TradeRead:
@@ -46,12 +37,6 @@ class TradeService:
         if not item: raise AppError(404, "Trade not found")
         values = data.model_dump(exclude_unset=True)
         if "account_id" in values: await self._account(user_id, values["account_id"])
-        values["pnl"] = self._pnl(
-            values.get("side", item.side),
-            values.get("volume", item.volume),
-            values.get("open_price", item.open_price),
-            values.get("close_price", item.close_price),
-        )
         return TradeRead.model_validate(await self.trades.update(item, values))
 
     async def delete(self, user_id: UUID, trade_id: UUID) -> None:

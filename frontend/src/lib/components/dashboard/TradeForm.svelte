@@ -12,22 +12,14 @@
     trade_date: trade?.trade_date.slice(0, 16) || new Date().toISOString().slice(0, 16),
     symbol: trade?.symbol || '', asset_type: trade?.asset_type || 'FOREX', side: trade?.side || 'BUY',
     volume: trade?.volume || '', open_price: trade?.open_price || '', close_price: trade?.close_price || '',
-    stop_loss: trade?.stop_loss || '', take_profit: trade?.take_profit || '', comments: trade?.comments || ''
+    stop_loss: trade?.stop_loss || '', take_profit: trade?.take_profit || '', pnl: trade?.pnl || '', comments: trade?.comments || ''
   };
   let error = '';
   let loading = false;
 
-  $: calculatedPnl = calculatePnl();
-
-  function calculatePnl() {
-    const volume = Number(form.volume), openPrice = Number(form.open_price), closePrice = Number(form.close_price);
-    if (!form.close_price || !Number.isFinite(volume) || !Number.isFinite(openPrice) || !Number.isFinite(closePrice)) return null;
-    return (form.side === 'BUY' ? closePrice - openPrice : openPrice - closePrice) * volume;
-  }
-
   async function submit() {
     loading = true; error = '';
-    const nullable = ['close_price', 'stop_loss', 'take_profit', 'comments'];
+    const nullable = ['close_price', 'stop_loss', 'take_profit', 'pnl', 'comments'];
     const body = Object.fromEntries(Object.entries(form).map(([key, value]) => [key, value === '' && nullable.includes(key) ? null : value]));
     try {
       trade ? await tradesApi.update(trade.id, body) : await tradesApi.create(body);
@@ -52,7 +44,7 @@
       <label class="field"><span>Close price</span><input type="number" step="any" min="0" bind:value={form.close_price} /></label>
       <label class="field"><span>Stop loss</span><input type="number" step="any" min="0" bind:value={form.stop_loss} /></label>
       <label class="field"><span>Take profit</span><input type="number" step="any" min="0" bind:value={form.take_profit} /></label>
-      <label class="field"><span>P&amp;L (calculated)</span><input value={calculatedPnl === null ? 'Open trade' : calculatedPnl.toFixed(2)} readonly /></label>
+      <label class="field"><span>P&amp;L</span><input type="number" step="any" bind:value={form.pnl} /></label>
       <label class="field"><span>Comments</span><textarea bind:value={form.comments}></textarea></label>
       {#if error}<p class="error">{error}</p>{/if}<button class="btn" disabled={loading}>{loading ? 'Saving…' : 'Save trade'}</button>
     </form>
