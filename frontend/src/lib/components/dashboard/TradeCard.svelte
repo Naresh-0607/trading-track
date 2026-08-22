@@ -5,13 +5,14 @@
 
   export let trade: Trade;
   export let account: Account | undefined;
-  export let edit: () => void;
-  export let removed: () => void;
+  export let edit: (() => void) | undefined = undefined;
+  export let removed: (() => void) | undefined = undefined;
+  export let showActions = true;
 
   async function remove() {
     if (confirm(`Delete ${trade.symbol} trade?`)) {
       await tradesApi.remove(trade.id);
-      removed();
+      removed?.();
     }
   }
 </script>
@@ -41,10 +42,12 @@
 
   {#if trade.comments}<p>{trade.comments}</p>{/if}
 
-  <footer>
-    <button onclick={edit}><Pencil size={16} /> Edit</button>
-    <button class="delete" onclick={remove}><Trash2 size={16} /> Delete</button>
-  </footer>
+  {#if showActions && (edit || removed)}
+    <footer>
+      {#if edit}<button onclick={edit}><Pencil size={16} /> Edit</button>{/if}
+      {#if removed}<button class="delete" onclick={remove}><Trash2 size={16} /> Delete</button>{/if}
+    </footer>
+  {/if}
 </article>
 
 <style>

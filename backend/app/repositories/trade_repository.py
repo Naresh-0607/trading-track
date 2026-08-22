@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import math
 from datetime import datetime
+from decimal import Decimal
 from uuid import UUID
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import and_, case, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.enums.trade_side import AssetType, TradeSide
@@ -13,6 +13,16 @@ from app.infrastructure.models.trade import Trade
 
 class TradeRepository:
     def __init__(self, db: AsyncSession): self.db = db
+
+    @staticmethod
+    def _closed_pnl():
+        return case(
+            (
+                and_(Trade.close_price.is_not(None), Trade.pnl.is_not(None)),
+                Trade.pnl,
+            ),
+            else_=Decimal("0.00"),
+        )
 
     async def list(self, user_id: UUID, *, account_id: UUID | None, side: TradeSide | None, symbol: str | None,
                    asset_type: AssetType | None, search: str | None, page: int, page_size: int) -> tuple[list[Trade], int]:
@@ -49,3 +59,30 @@ class TradeRepository:
         filters = [Trade.user_id == user_id]
         if since: filters.append(Trade.trade_date >= since)
         return list((await self.db.scalars(select(Trade).where(*filters).order_by(Trade.trade_date))).all())
+
+    async def calendar_month(self, user_id: UUID, start: datetime, end: datetime) -> list[tuple[object, object, int]]:
+        trade_day = func.date(Trade.trade_date)
+        statement = (
+            select(
+                trade_day.label("trade_day"),
+                func.coalesce(func.sum(self._closed_pnl()), Decimal("0.00")).label("pnl"),
+                func.count(Trade.id).label("trade_count"),
+            )
+            .where(Trade.user_id == user_id, Trade.trade_date >= start, Trade.trade_date < end)
+            .group_by(trade_day)
+            .order_by(trade_day)
+        )
+        return [(row.trade_day, row.pnl, row.trade_count) for row in (await self.db.execute(statement)).all()]
+
+    async def calendar_day(self, user_id: UUID, start: datetime, end: datetime) -> tuple[object, int, list[Trade]]:
+        filters = [Trade.user_id == user_id, Trade.trade_date >= start, Trade.trade_date < end]
+        totals = (
+            await self.db.execute(
+                select(
+                    func.coalesce(func.sum(self._closed_pnl()), Decimal("0.00")),
+                    func.count(Trade.id),
+                ).where(*filters)
+            )
+        ).one()
+        trades = list((await self.db.scalars(select(Trade).where(*filters).order_by(Trade.trade_date))).all())
+        return totals[0], totals[1], trades
