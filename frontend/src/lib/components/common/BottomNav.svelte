@@ -1,10 +1,11 @@
 <script lang="ts">
   import { page } from '$app/state';
-  import { LayoutDashboard, WalletCards, ChartNoAxesCombined } from 'lucide-svelte';
+  import { LayoutDashboard, WalletCards, CalendarDays, ChartNoAxesCombined } from 'lucide-svelte';
 
   const links = [
     ['/dashboard', 'Dashboard', LayoutDashboard],
     ['/accounts', 'Accounts', WalletCards],
+    ['/calendar', 'Calendar', CalendarDays],
     ['/stats', 'Stats', ChartNoAxesCombined]
   ] as const;
 </script>
@@ -25,7 +26,7 @@
     left: 50%;
     bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     width: min(calc(100% - 40px), 560px);
     height: 68px;
     box-sizing: border-box;

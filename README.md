@@ -75,5 +75,6 @@ Create a service from `render.yaml` or use its commands manually. Set `DATABASE_
 - Accounts: authenticated CRUD at `/api/v1/accounts`
 - Trades: authenticated CRUD at `/api/v1/trades`, with account/side/symbol/asset/search filters and pagination
 - Stats: `GET /api/v1/stats/overview?range=7d|1m|3m|all`
+- Calendar: `GET /api/v1/calendar?year=YYYY&month=M` and `GET /api/v1/calendar/{date}`
 
 Every account and trade query is scoped to the JWT-derived user. The API never accepts a user ID for authorization.
